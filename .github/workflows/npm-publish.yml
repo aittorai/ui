@@ -23,6 +23,7 @@ jobs:
           - url: https://npm.pkg.github.com
             token_secret: GH_TOKEN
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,15 +41,6 @@ jobs:
           cache: pnpm
           registry-url: ${{ matrix.registry.url }}
           scope: '@aittorai'
-
-      - name: Reinstall @aittorai packages
-        shell: bash
-        run: |
-          VERSION_ESLINT=$(node -p "require('./package.json').devDependencies['@aittorai/eslint-config-react']")
-          VERSION_PRETTIER=$(node -p "require('./package.json').devDependencies['@aittorai/prettier-config-react']")
-
-          pnpm uninstall @aittorai/eslint-config-react @aittorai/prettier-config-react
-          pnpm install --ignore-scripts -D @aittorai/eslint-config-react@$VERSION_ESLINT -D @aittorai/prettier-config-react@$VERSION_PRETTIER
         env:
           NODE_AUTH_TOKEN: ${{ secrets[matrix.registry.token_secret] }}
 
@@ -67,20 +59,17 @@ jobs:
 
           if [[ $EXISTS == *"version not found"* ]]; then
             echo "Version $PACKAGE_VERSION does not exist. Proceeding with publish."
-            echo "::set-output name=version::$PACKAGE_VERSION"
+            echo "version=$PACKAGE_VERSION" >> $GITHUB_ENV
           else
             echo "Version $PACKAGE_VERSION already exists. Bumping version."
             NEW_VERSION=$(npm version patch --no-git-tag-version)
-            echo "::set-output name=version::$NEW_VERSION"
+            echo "version=$NEW_VERSION" >> $GITHUB_ENV
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets[matrix.registry.token_secret] }}
-
-      - name: Set package version
-        run: echo "VERSION=${{ steps.bump_version.outputs.version }}" >> $GITHUB_ENV
 
       - name: Publish
         run: pnpm publish --access public --no-git-checks --tag latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets[matrix.registry.token_secret] }}
-          PACKAGE_VERSION: ${{ steps.bump_version.outputs.version }}
+          PACKAGE_VERSION: ${{ env.version }}
