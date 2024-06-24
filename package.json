@@ -1,6 +1,6 @@
 {
   "name": "@aittorai/ui",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "UI Components for Aittor applications.",
   "directories": {
     "lib": "lib"
